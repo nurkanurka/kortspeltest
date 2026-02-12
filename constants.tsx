@@ -40,8 +40,7 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-common',
     backGradient: 'from-blue-700 via-blue-900 to-blue-950',
     backBorder: 'border-blue-400',
-    accentColor: 'text-blue-300',
-    prompt: "A cartoonish fantasy card back design, primary color blue, featuring a central glowing magical portal or swirl, thick stylized wooden borders, hearthstone game art style, high quality, digital illustration, centered composition."
+    accentColor: 'text-blue-300'
   },
   [Rarity.UNCOMMON]: { 
     color: 'text-green-400', 
@@ -50,8 +49,7 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-uncommon',
     backGradient: 'from-emerald-600 via-emerald-800 to-emerald-950',
     backBorder: 'border-emerald-400',
-    accentColor: 'text-emerald-300',
-    prompt: "A cartoonish fantasy card back design, primary color green, featuring forest leaves and ancient glowing druidic runes, thick stone borders, hearthstone game art style, high quality, digital illustration, centered composition."
+    accentColor: 'text-emerald-300'
   },
   [Rarity.RARE]: { 
     color: 'text-slate-100', 
@@ -60,8 +58,7 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-rare',
     backGradient: 'from-slate-400 via-slate-600 to-slate-800',
     backBorder: 'border-slate-100',
-    accentColor: 'text-white',
-    prompt: "A cartoonish fantasy card back design, primary color silver and white, featuring celestial stars and a moon symbol, ornate silver filigree borders, hearthstone game art style, high quality, digital illustration, centered composition."
+    accentColor: 'text-white'
   },
   [Rarity.ULTRA_RARE]: { 
     color: 'text-yellow-400', 
@@ -70,7 +67,6 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-legendary',
     backGradient: 'from-amber-400 via-amber-600 to-amber-900',
     backBorder: 'border-yellow-200',
-    accentColor: 'text-yellow-200',
-    prompt: "A cartoonish fantasy card back design, primary color gold and amber, featuring a glowing dragon head or phoenix egg, intricate gold plated borders, sparkling magical particles, hearthstone game art style, high quality, digital illustration, centered composition."
+    accentColor: 'text-yellow-200'
   },
 };

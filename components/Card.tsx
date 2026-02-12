@@ -11,10 +11,9 @@ interface CardProps {
   onFlip: (id: string) => void;
   disabled: boolean;
   offsetToCenter?: { x: number; y: number };
-  backImage?: string;
 }
 
-const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip, disabled, offsetToCenter, backImage }) => {
+const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip, disabled, offsetToCenter }) => {
   const resConfig = RESOURCE_CONFIG[card.resource.type];
   const rarityConfig = RARITY_CONFIG[card.resource.rarity];
 
@@ -40,26 +39,18 @@ const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip
           ${isChosen ? 'victory-glow-active rounded-2xl' : ''}
         `}
       >
-        {/* Card Back - Cartoonish Fantasy Theme with AI Art Background */}
+        {/* Card Back - Cartoonish Fantasy Theme (CSS Only) */}
         <div className={`absolute inset-0 backface-hidden flex items-center justify-center rounded-2xl border-[10px] ${rarityConfig.backBorder} shadow-2xl overflow-hidden group`}>
-          {/* AI Generated Asset Background */}
-          {backImage ? (
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
-              style={{ backgroundImage: `url(${backImage})` }}
-            />
-          ) : (
-            <div className={`absolute inset-0 bg-gradient-to-br ${rarityConfig.backGradient}`}></div>
-          )}
+          <div className={`absolute inset-0 bg-gradient-to-br ${rarityConfig.backGradient}`}></div>
           
-          {/* Overlay Vignetting / Pattern */}
-          <div className="absolute inset-0 bg-black/20 opacity-40 pointer-events-none"></div>
+          {/* Subtle Pattern Overlay */}
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at center, white 1px, transparent 1px)`, backgroundSize: '16px 16px' }}></div>
           
           <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
             {/* Ornate Inner Frame */}
-            <div className={`w-full h-full border-[2px] ${rarityConfig.backBorder} rounded-xl p-2 flex items-center justify-center relative bg-black/10 backdrop-blur-[1px]`}>
+            <div className={`w-full h-full border-[2px] ${rarityConfig.backBorder} rounded-xl p-2 flex items-center justify-center relative bg-black/10`}>
               
-              {/* Magic Symbol Centerpiece (Glassy effect over AI art) */}
+              {/* Magic Symbol Centerpiece */}
               <div className={`w-36 h-36 rounded-full border-[6px] ${rarityConfig.backBorder} flex items-center justify-center bg-black/40 shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden`}>
                 <div className={`w-full h-full flex items-center justify-center relative ${!disabled ? 'animate-spin-slow' : ''}`}>
                   <svg className={`w-24 h-24 ${rarityConfig.accentColor} opacity-80`} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
@@ -76,14 +67,14 @@ const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip
               <div className={`absolute -bottom-1 -left-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-bl-lg -rotate-45 transform -translate-x-1/2 translate-y-1/2 shadow-md`}></div>
               <div className={`absolute -bottom-1 -right-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-br-lg rotate-45 transform translate-x-1/2 translate-y-1/2 shadow-md`}></div>
               
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                 <span className={`font-fantasy text-5xl ${rarityConfig.accentColor} font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]`}>?</span>
               </div>
             </div>
           </div>
           
           {!disabled && (
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
           )}
         </div>
 

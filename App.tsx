@@ -5,7 +5,6 @@ import { generateNewCards, getUpgradeCost, MAX_LEVEL } from './utils/gameLogic';
 import Card from './components/Card';
 import InventoryDisplay from './components/InventoryDisplay';
 import { RARITY_CONFIG, RESOURCE_CONFIG } from './constants';
-import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardState[]>([]);
@@ -27,15 +26,6 @@ const App: React.FC = () => {
     };
   });
 
-  const [rarityImages, setRarityImages] = useState<Record<Rarity, string | undefined>>({
-    [Rarity.COMMON]: undefined,
-    [Rarity.UNCOMMON]: undefined,
-    [Rarity.RARE]: undefined,
-    [Rarity.ULTRA_RARE]: undefined,
-  });
-
-  const [isLoadingAssets, setIsLoadingAssets] = useState(true);
-  const [assetStatus, setAssetStatus] = useState("Preparing the Tavern...");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -43,42 +33,6 @@ const App: React.FC = () => {
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const [centerOffsets, setCenterOffsets] = useState<{ [key: string]: { x: number; y: number } }>({});
-
-  // Generate AI Assets
-  useEffect(() => {
-    const generateAssets = async () => {
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-        const rarities = [Rarity.COMMON, Rarity.UNCOMMON, Rarity.RARE, Rarity.ULTRA_RARE];
-        const newImages = { ...rarityImages };
-
-        for (const rarity of rarities) {
-          setAssetStatus(`Forging ${rarity.replace('_', ' ')} card backs...`);
-          const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-              parts: [{ text: RARITY_CONFIG[rarity].prompt }],
-            },
-            config: {
-              imageConfig: { aspectRatio: "3:4" }
-            }
-          });
-
-          const imagePart = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-          if (imagePart?.inlineData?.data) {
-            newImages[rarity] = `data:image/png;base64,${imagePart.inlineData.data}`;
-          }
-        }
-        setRarityImages(newImages);
-        setIsLoadingAssets(false);
-      } catch (error) {
-        console.error("Asset generation failed:", error);
-        setIsLoadingAssets(false); // Fallback to CSS version
-      }
-    };
-
-    generateAssets();
-  }, []);
 
   // Persistence
   useEffect(() => {
@@ -89,7 +43,7 @@ const App: React.FC = () => {
   // Initialize cards on mount
   useEffect(() => {
     setCards(generateNewCards(upgrades));
-  }, []);
+  }, [upgrades]);
 
   const calculateOffsets = useCallback(() => {
     if (!containerRef.current) return;
@@ -125,7 +79,7 @@ const App: React.FC = () => {
   }, [calculateOffsets]);
 
   const handleCardFlip = useCallback((id: string) => {
-    if (selectedId || isResetting || isShopOpen || isLoadingAssets) return;
+    if (selectedId || isResetting || isShopOpen) return;
 
     setSelectedId(id);
     const selectedCard = cards.find(c => c.id === id);
@@ -145,7 +99,7 @@ const App: React.FC = () => {
         setIsResetting(false);
       }, 800);
     }, 2200);
-  }, [cards, selectedId, isResetting, isShopOpen, upgrades, isLoadingAssets]);
+  }, [cards, selectedId, isResetting, isShopOpen, upgrades]);
 
   const buyUpgrade = (rarity: Rarity) => {
     const levelKey = rarity === Rarity.UNCOMMON ? 'uncommonLevel' : 
@@ -178,18 +132,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden relative">
-      {/* Loading Assets Screen */}
-      {isLoadingAssets && (
-        <div className="fixed inset-0 z-[100] bg-[#1a0f0a] flex flex-col items-center justify-center text-center p-6 transition-opacity duration-1000">
-           <div className="w-24 h-24 border-t-4 border-b-4 border-[#c0a060] rounded-full animate-spin mb-8 shadow-[0_0_20px_rgba(192,160,96,0.3)]"></div>
-           <h2 className="text-3xl font-fantasy font-black text-[#f5df9f] mb-4 animate-pulse uppercase tracking-[0.2em]">{assetStatus}</h2>
-           <p className="text-[#c0a060]/60 max-w-md italic font-medium tracking-wide">Drawing unique magical patterns from the nether realms to customize your deck...</p>
-        </div>
-      )}
-
       <InventoryDisplay inventory={inventory} />
 
-      <main className={`flex-1 flex flex-col items-center justify-center relative px-4 z-10 transition-all duration-500 ${isLoadingAssets ? 'opacity-0 blur-lg' : 'opacity-100 blur-0'}`}>
+      <main className="flex-1 flex flex-col items-center justify-center relative px-4 z-10 transition-all duration-500">
         <div className={`transition-all duration-500 flex flex-col items-center ${isShopOpen ? 'opacity-20 scale-90 blur-sm pointer-events-none' : 'opacity-100 scale-100'}`}>
           <div className="text-center pointer-events-none mb-8">
             <h1 className="text-4xl md:text-6xl font-fantasy font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#f5df9f] via-[#c0a060] to-[#8d6e3e] drop-shadow-2xl">
@@ -214,15 +159,15 @@ const App: React.FC = () => {
                   isHidden={(selectedId !== null && selectedId !== card.id) || isResetting}
                   isChosen={selectedId === card.id}
                   onFlip={handleCardFlip}
-                  disabled={selectedId !== null || isResetting || isShopOpen || isLoadingAssets}
+                  disabled={selectedId !== null || isResetting || isShopOpen}
                   offsetToCenter={centerOffsets[card.id]}
-                  backImage={rarityImages[card.resource.rarity]}
                 />
               </div>
             ))}
           </div>
         </div>
 
+        {/* Shop Button */}
         <button 
           onClick={() => setIsShopOpen(!isShopOpen)}
           className={`
@@ -235,6 +180,7 @@ const App: React.FC = () => {
           </svg>
         </button>
 
+        {/* Shop Overlay */}
         <div className={`
           fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-500 p-6
           ${isShopOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-y-10'}
