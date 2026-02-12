@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resource Riches: Hearthstone Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #1a0f0a;
+        color: #f8fafc;
+        overflow: hidden;
+      }
+      .font-fantasy {
+        font-family: 'Cinzel', serif;
+      }
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+      }
+      .transform-style-3d {
+        transform-style: preserve-3d;
+      }
+      /* Custom Hearthstone-like gradients and textures */
+      .bg-tavern {
+        background: radial-gradient(circle at center, #3d2b1f 0%, #0c0806 100%);
+        background-attachment: fixed;
+      }
+      .card-inner-shadow {
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      }
+      .text-shadow-fantasy {
+        text-shadow: 2px 2px 0px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2);
+      }
+      .rarity-glow-legendary { filter: drop-shadow(0 0 20px #f59e0b); }
+      .rarity-glow-epic { filter: drop-shadow(0 0 15px #a855f7); }
+      .rarity-glow-rare { filter: drop-shadow(0 0 15px #3b82f6); }
+      .rarity-glow-uncommon { filter: drop-shadow(0 0 15px #22c55e); }
+      .rarity-glow-common { filter: drop-shadow(0 0 10px #3b82f6); }
+
+      @keyframes card-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1.1); }
+      }
+      .animate-pop {
+        animation: card-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+
+      @keyframes victory-glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), 0 0 40px rgba(192, 160, 96, 0.2); }
+        50% { box-shadow: 0 0 60px rgba(255, 255, 255, 0.5), 0 0 100px rgba(192, 160, 96, 0.4); }
+      }
+      .victory-glow-active {
+        animation: victory-glow 1.5s infinite ease-in-out;
+      }
+
+      @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-slow {
+        animation: spin-slow 12s linear infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+</head>
+  <body class="bg-tavern">
+    <div id="root"></div>
+  </body>
+</html>
