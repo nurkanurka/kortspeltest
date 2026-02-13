@@ -7,35 +7,38 @@ import { RESOURCE_CONFIG } from './constants.tsx';
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardState[]>([]);
+  
   const [inventory, setInventory] = useState<Inventory>(() => {
+    const defaults = {
+      [ResourceType.GOLD]: 0,
+      [ResourceType.MATERIALS]: 0,
+    };
     try {
       const saved = localStorage.getItem('tavern-inventory');
-      return saved ? JSON.parse(saved) : {
-        [ResourceType.GOLD]: 0,
-        [ResourceType.MATERIALS]: 0,
-      };
+      if (saved) {
+        return { ...defaults, ...JSON.parse(saved) };
+      }
+      return defaults;
     } catch (e) {
       console.error("Failed to parse inventory from localStorage", e);
-      return {
-        [ResourceType.GOLD]: 0,
-        [ResourceType.MATERIALS]: 0,
-      };
+      return defaults;
     }
   });
   
   const [upgrades, setUpgrades] = useState<UpgradesState>(() => {
+    const defaults = {
+      luckLevel: 0,
+      maxCardsLevel: 0,
+    };
     try {
       const saved = localStorage.getItem('tavern-upgrades');
-      return saved ? JSON.parse(saved) : {
-        luckLevel: 0,
-        maxCardsLevel: 0,
-      };
+      if (saved) {
+        return { ...defaults, ...JSON.parse(saved) };
+      }
+      return defaults;
     } catch (e) {
       console.error("Failed to parse upgrades from localStorage", e);
-      return {
-        luckLevel: 0,
-        maxCardsLevel: 0,
-      };
+      return defaults;
     }
   });
 
@@ -48,7 +51,7 @@ const App: React.FC = () => {
     localStorage.setItem('tavern-upgrades', JSON.stringify(upgrades));
   }, [inventory, upgrades]);
 
-  // Initialize cards on mount or upgrade
+  // Initialize cards on mount or upgrade to slot count
   useEffect(() => {
     setCards(generateNewCards(upgrades));
   }, [upgrades.maxCardsLevel]);
@@ -77,7 +80,7 @@ const App: React.FC = () => {
   }, [cards, selectedId, isResetting, upgrades]);
 
   const buyLuckUpgrade = () => {
-    const currentLevel = upgrades.luckLevel;
+    const currentLevel = upgrades.luckLevel || 0;
     if (currentLevel >= MAX_LUCK_LEVEL) return;
     const costs = getLuckUpgradeCost(currentLevel);
     const canAfford = Object.entries(costs).every(([type, amount]) => 
@@ -91,12 +94,12 @@ const App: React.FC = () => {
         });
         return next;
       });
-      setUpgrades(prev => ({ ...prev, luckLevel: prev.luckLevel + 1 }));
+      setUpgrades(prev => ({ ...prev, luckLevel: (prev.luckLevel || 0) + 1 }));
     }
   };
 
   const buyCardsUpgrade = () => {
-    const currentLevel = upgrades.maxCardsLevel;
+    const currentLevel = upgrades.maxCardsLevel || 0;
     if (currentLevel >= MAX_CARDS_LEVEL) return;
     const costs = getCardsUpgradeCost(currentLevel);
     const canAfford = Object.entries(costs).every(([type, amount]) => 
@@ -110,15 +113,15 @@ const App: React.FC = () => {
         });
         return next;
       });
-      setUpgrades(prev => ({ ...prev, maxCardsLevel: prev.maxCardsLevel + 1 }));
+      setUpgrades(prev => ({ ...prev, maxCardsLevel: (prev.maxCardsLevel || 0) + 1 }));
     }
   };
 
-  const currentLuckCosts = getLuckUpgradeCost(upgrades.luckLevel);
-  const currentCardsCosts = getCardsUpgradeCost(upgrades.maxCardsLevel);
+  const currentLuckCosts = getLuckUpgradeCost(upgrades.luckLevel || 0);
+  const currentCardsCosts = getCardsUpgradeCost(upgrades.maxCardsLevel || 0);
   
-  const isMaxLuck = upgrades.luckLevel >= MAX_LUCK_LEVEL;
-  const isMaxCards = upgrades.maxCardsLevel >= MAX_CARDS_LEVEL;
+  const isMaxLuck = (upgrades.luckLevel || 0) >= MAX_LUCK_LEVEL;
+  const isMaxCards = (upgrades.maxCardsLevel || 0) >= MAX_CARDS_LEVEL;
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-y-auto">
@@ -170,7 +173,7 @@ const App: React.FC = () => {
                     Luck
                   </h2>
                   <span className="text-[#c0a060] font-black text-[9px] uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-[#c0a060]/20">
-                    LVL {upgrades.luckLevel}
+                    LVL {upgrades.luckLevel || 0}
                   </span>
                 </div>
                 <div className="w-full bg-black/30 border border-[#c0a060]/10 rounded-xl p-2.5 flex flex-col items-center">
@@ -213,7 +216,7 @@ const App: React.FC = () => {
                     Slots
                   </h2>
                   <span className="text-[#c0a060] font-black text-[9px] uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-[#c0a060]/20">
-                    {upgrades.maxCardsLevel + 1}/4
+                    {(upgrades.maxCardsLevel || 0) + 1}/4
                   </span>
                 </div>
                 <div className="w-full bg-black/30 border border-[#c0a060]/10 rounded-xl p-2.5 flex flex-col items-center">

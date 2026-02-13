@@ -6,21 +6,22 @@ import { ResourceType, CardState, Rarity, UpgradesState, Inventory } from '../ty
 export const MAX_LUCK_LEVEL = 100;
 export const MAX_CARDS_LEVEL = 3; // 0 (1 card) to 3 (4 cards)
 
-export const getLuckUpgradeCost = (level: number): Partial<Inventory> => {
+export const getLuckUpgradeCost = (level: number = 0): Partial<Inventory> => {
   // Luck only costs Gold
-  const goldCost = Math.floor(100 * Math.pow(1.12, level));
+  const safeLevel = isNaN(level) ? 0 : level;
+  const goldCost = Math.floor(100 * Math.pow(1.12, safeLevel));
   return { [ResourceType.GOLD]: goldCost };
 };
 
-export const getCardsUpgradeCost = (level: number): Partial<Inventory> => {
+export const getCardsUpgradeCost = (level: number = 0): Partial<Inventory> => {
   // Max cards only costs Materials
-  // Level 1: ~50, Level 2: ~250, Level 3: ~1250
-  const materialCost = Math.floor(50 * Math.pow(5, level));
+  const safeLevel = isNaN(level) ? 0 : level;
+  const materialCost = Math.floor(50 * Math.pow(5, safeLevel));
   return { [ResourceType.MATERIALS]: materialCost };
 };
 
 export const getRarityChances = (upgrades: UpgradesState) => {
-  const level = upgrades.luckLevel;
+  const level = upgrades.luckLevel || 0;
   
   // Base chances
   const baseUncommon = 0.04;
@@ -82,7 +83,7 @@ export const getRandomResourceType = (): ResourceType => {
 };
 
 export const generateNewCards = (upgrades: UpgradesState): CardState[] => {
-  const count = 1 + upgrades.maxCardsLevel;
+  const count = 1 + (upgrades.maxCardsLevel || 0);
   return Array.from({ length: count }).map((_, num) => {
     const rarity = getWeightedRarity(upgrades);
     const amount = getAmountForRarity(rarity);
