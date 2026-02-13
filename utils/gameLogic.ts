@@ -1,5 +1,5 @@
 
-import { ResourceType, CardState, Rarity, UpgradesState, Inventory } from '../types';
+import { ResourceType, CardState, Rarity, UpgradesState, Inventory } from '../types.ts';
 
 /**
  * Upgrade Definitions
@@ -21,16 +21,13 @@ export const getUpgradeCost = (rarity: Rarity, level: number): Partial<Inventory
 };
 
 export const getRarityChances = (upgrades: UpgradesState) => {
-  // Base starting chances (very low for high rarities)
-  // Level 0: 95% Common, 4% Uncommon, 0.9% Rare, 0.1% Ultra Rare
   const baseUncommon = 0.04;
   const baseRare = 0.009;
   const baseUltraRare = 0.001;
 
-  // Each level adds more chance
-  const uncommon = baseUncommon + (upgrades.uncommonLevel * 0.05); // +5% per level
-  const rare = baseRare + (upgrades.rareLevel * 0.02); // +2% per level
-  const ultraRare = baseUltraRare + (upgrades.ultraRareLevel * 0.01); // +1% per level
+  const uncommon = baseUncommon + (upgrades.uncommonLevel * 0.05); 
+  const rare = baseRare + (upgrades.rareLevel * 0.02);
+  const ultraRare = baseUltraRare + (upgrades.ultraRareLevel * 0.01);
 
   const common = Math.max(0.1, 1 - (uncommon + rare + ultraRare));
 

@@ -1,29 +1,47 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { CardState, Inventory, ResourceType, UpgradesState, Rarity } from './types';
-import { generateNewCards, getUpgradeCost, MAX_LEVEL } from './utils/gameLogic';
-import Card from './components/Card';
-import InventoryDisplay from './components/InventoryDisplay';
-import { RARITY_CONFIG, RESOURCE_CONFIG } from './constants';
+import { CardState, Inventory, ResourceType, UpgradesState, Rarity } from './types.ts';
+import { generateNewCards, getUpgradeCost, MAX_LEVEL } from './utils/gameLogic.ts';
+import Card from './components/Card.tsx';
+import InventoryDisplay from './components/InventoryDisplay.tsx';
+import { RARITY_CONFIG, RESOURCE_CONFIG } from './constants.tsx';
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardState[]>([]);
   const [inventory, setInventory] = useState<Inventory>(() => {
-    const saved = localStorage.getItem('tavern-inventory');
-    return saved ? JSON.parse(saved) : {
-      [ResourceType.GOLD]: 0,
-      [ResourceType.ENERGY]: 0,
-      [ResourceType.MATERIALS]: 0,
-    };
+    try {
+      const saved = localStorage.getItem('tavern-inventory');
+      return saved ? JSON.parse(saved) : {
+        [ResourceType.GOLD]: 0,
+        [ResourceType.ENERGY]: 0,
+        [ResourceType.MATERIALS]: 0,
+      };
+    } catch (e) {
+      console.error("Failed to parse inventory from localStorage", e);
+      return {
+        [ResourceType.GOLD]: 0,
+        [ResourceType.ENERGY]: 0,
+        [ResourceType.MATERIALS]: 0,
+      };
+    }
   });
   
   const [upgrades, setUpgrades] = useState<UpgradesState>(() => {
-    const saved = localStorage.getItem('tavern-upgrades');
-    return saved ? JSON.parse(saved) : {
-      uncommonLevel: 0,
-      rareLevel: 0,
-      ultraRareLevel: 0,
-    };
+    try {
+      const saved = localStorage.getItem('tavern-upgrades');
+      return saved ? JSON.parse(saved) : {
+        uncommonLevel: 0,
+        rareLevel: 0,
+        ultraRareLevel: 0,
+      };
+    } catch (e) {
+      console.error("Failed to parse upgrades from localStorage", e);
+      return {
+        uncommonLevel: 0,
+        rareLevel: 0,
+        ultraRareLevel: 0,
+      };
+    }
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -167,7 +185,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Shop Button */}
         <button 
           onClick={() => setIsShopOpen(!isShopOpen)}
           className={`
@@ -180,7 +197,6 @@ const App: React.FC = () => {
           </svg>
         </button>
 
-        {/* Shop Overlay */}
         <div className={`
           fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-500 p-6
           ${isShopOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-y-10'}
