@@ -1,33 +1,43 @@
-
 import { ResourceType, CardState, Rarity, UpgradesState, Inventory } from '../types.ts';
 
 /**
  * Upgrade Definitions
  */
-export const MAX_LEVEL = 5;
+export const MAX_LUCK_LEVEL = 100;
+export const MAX_CARDS_LEVEL = 3; // 0 (1 card) to 3 (4 cards)
 
-export const getUpgradeCost = (rarity: Rarity, level: number): Partial<Inventory> => {
-  const multiplier = Math.pow(2.5, level);
-  switch (rarity) {
-    case Rarity.UNCOMMON:
-      return { [ResourceType.GOLD]: Math.floor(250 * multiplier) };
-    case Rarity.RARE:
-      return { [ResourceType.GOLD]: Math.floor(1000 * multiplier), [ResourceType.ENERGY]: Math.floor(50 * multiplier) };
-    case Rarity.ULTRA_RARE:
-      return { [ResourceType.GOLD]: Math.floor(5000 * multiplier), [ResourceType.MATERIALS]: Math.floor(200 * multiplier) };
-    default:
-      return { [ResourceType.GOLD]: 100 };
-  }
+export const getLuckUpgradeCost = (level: number): Partial<Inventory> => {
+  // Luck only costs Gold
+  const goldCost = Math.floor(100 * Math.pow(1.12, level));
+  return { [ResourceType.GOLD]: goldCost };
+};
+
+export const getCardsUpgradeCost = (level: number): Partial<Inventory> => {
+  // Max cards only costs Materials
+  // Level 1: ~50, Level 2: ~250, Level 3: ~1250
+  const materialCost = Math.floor(50 * Math.pow(5, level));
+  return { [ResourceType.MATERIALS]: materialCost };
 };
 
 export const getRarityChances = (upgrades: UpgradesState) => {
+  const level = upgrades.luckLevel;
+  
+  // Base chances
   const baseUncommon = 0.04;
   const baseRare = 0.009;
   const baseUltraRare = 0.001;
 
-  const uncommon = baseUncommon + (upgrades.uncommonLevel * 0.05); 
-  const rare = baseRare + (upgrades.rareLevel * 0.02);
-  const ultraRare = baseUltraRare + (upgrades.ultraRareLevel * 0.01);
+  // Max improvements (at level 100)
+  const maxBonusUncommon = 0.35;
+  const maxBonusRare = 0.15;
+  const maxBonusUltraRare = 0.05;
+
+  // Linear interpolation for level 0-100
+  const progress = level / MAX_LUCK_LEVEL;
+
+  const uncommon = baseUncommon + (maxBonusUncommon * progress);
+  const rare = baseRare + (maxBonusRare * progress);
+  const ultraRare = baseUltraRare + (maxBonusUltraRare * progress);
 
   const common = Math.max(0.1, 1 - (uncommon + rare + ultraRare));
 
@@ -46,20 +56,20 @@ const getWeightedRarity = (upgrades: UpgradesState): Rarity => {
 
 const getAmountForRarity = (rarity: Rarity): number => {
   let min = 1;
-  let max = 100;
+  let max = 10;
 
   switch (rarity) {
     case Rarity.COMMON:
-      min = 1; max = 100;
+      min = 1; max = 10;
       break;
     case Rarity.UNCOMMON:
-      min = 101; max = 350;
+      min = 10; max = 20;
       break;
     case Rarity.RARE:
-      min = 351; max = 700;
+      min = 20; max = 70;
       break;
     case Rarity.ULTRA_RARE:
-      min = 701; max = 1000;
+      min = 70; max = 100;
       break;
   }
   
@@ -72,7 +82,8 @@ export const getRandomResourceType = (): ResourceType => {
 };
 
 export const generateNewCards = (upgrades: UpgradesState): CardState[] => {
-  return [1, 2, 3].map((num) => {
+  const count = 1 + upgrades.maxCardsLevel;
+  return Array.from({ length: count }).map((_, num) => {
     const rarity = getWeightedRarity(upgrades);
     const amount = getAmountForRarity(rarity);
     return {

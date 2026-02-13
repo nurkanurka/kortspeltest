@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { CardState, Inventory, ResourceType, UpgradesState, Rarity } from './types.ts';
-import { generateNewCards, getUpgradeCost, MAX_LEVEL } from './utils/gameLogic.ts';
+import { generateNewCards, getLuckUpgradeCost, getCardsUpgradeCost, MAX_LUCK_LEVEL, MAX_CARDS_LEVEL } from './utils/gameLogic.ts';
 import Card from './components/Card.tsx';
 import InventoryDisplay from './components/InventoryDisplay.tsx';
-import { RARITY_CONFIG, RESOURCE_CONFIG } from './constants.tsx';
+import { RESOURCE_CONFIG } from './constants.tsx';
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardState[]>([]);
@@ -13,14 +12,12 @@ const App: React.FC = () => {
       const saved = localStorage.getItem('tavern-inventory');
       return saved ? JSON.parse(saved) : {
         [ResourceType.GOLD]: 0,
-        [ResourceType.ENERGY]: 0,
         [ResourceType.MATERIALS]: 0,
       };
     } catch (e) {
       console.error("Failed to parse inventory from localStorage", e);
       return {
         [ResourceType.GOLD]: 0,
-        [ResourceType.ENERGY]: 0,
         [ResourceType.MATERIALS]: 0,
       };
     }
@@ -30,23 +27,20 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem('tavern-upgrades');
       return saved ? JSON.parse(saved) : {
-        uncommonLevel: 0,
-        rareLevel: 0,
-        ultraRareLevel: 0,
+        luckLevel: 0,
+        maxCardsLevel: 0,
       };
     } catch (e) {
       console.error("Failed to parse upgrades from localStorage", e);
       return {
-        uncommonLevel: 0,
-        rareLevel: 0,
-        ultraRareLevel: 0,
+        luckLevel: 0,
+        maxCardsLevel: 0,
       };
     }
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const [isShopOpen, setIsShopOpen] = useState(false);
   
   // Persistence
   useEffect(() => {
@@ -54,13 +48,13 @@ const App: React.FC = () => {
     localStorage.setItem('tavern-upgrades', JSON.stringify(upgrades));
   }, [inventory, upgrades]);
 
-  // Initialize cards on mount
+  // Initialize cards on mount or upgrade
   useEffect(() => {
     setCards(generateNewCards(upgrades));
-  }, [upgrades]);
+  }, [upgrades.maxCardsLevel]);
 
   const handleCardFlip = useCallback((id: string) => {
-    if (selectedId || isResetting || isShopOpen) return;
+    if (selectedId || isResetting) return;
 
     setSelectedId(id);
     const selectedCard = cards.find(c => c.id === id);
@@ -79,181 +73,193 @@ const App: React.FC = () => {
         setSelectedId(null);
         setIsResetting(false);
       }, 800);
-    }, 2800); // Slightly longer delay to appreciate the reveal
-  }, [cards, selectedId, isResetting, isShopOpen, upgrades]);
+    }, 2800); 
+  }, [cards, selectedId, isResetting, upgrades]);
 
-  const buyUpgrade = (rarity: Rarity) => {
-    const levelKey = rarity === Rarity.UNCOMMON ? 'uncommonLevel' : 
-                    rarity === Rarity.RARE ? 'rareLevel' : 'ultraRareLevel';
-    const currentLevel = upgrades[levelKey];
-    
-    if (currentLevel >= MAX_LEVEL) return;
-
-    const costs = getUpgradeCost(rarity, currentLevel);
-    
+  const buyLuckUpgrade = () => {
+    const currentLevel = upgrades.luckLevel;
+    if (currentLevel >= MAX_LUCK_LEVEL) return;
+    const costs = getLuckUpgradeCost(currentLevel);
     const canAfford = Object.entries(costs).every(([type, amount]) => 
       inventory[type as ResourceType] >= (amount || 0)
     );
-
     if (canAfford) {
       setInventory(prev => {
         const next = { ...prev };
         Object.entries(costs).forEach(([type, amount]) => {
-          next[type as ResourceType] -= (amount || 0);
+          if (amount) next[type as ResourceType] -= amount;
         });
         return next;
       });
-
-      setUpgrades(prev => ({
-        ...prev,
-        [levelKey]: prev[levelKey] + 1
-      }));
+      setUpgrades(prev => ({ ...prev, luckLevel: prev.luckLevel + 1 }));
     }
   };
 
+  const buyCardsUpgrade = () => {
+    const currentLevel = upgrades.maxCardsLevel;
+    if (currentLevel >= MAX_CARDS_LEVEL) return;
+    const costs = getCardsUpgradeCost(currentLevel);
+    const canAfford = Object.entries(costs).every(([type, amount]) => 
+      inventory[type as ResourceType] >= (amount || 0)
+    );
+    if (canAfford) {
+      setInventory(prev => {
+        const next = { ...prev };
+        Object.entries(costs).forEach(([type, amount]) => {
+          if (amount) next[type as ResourceType] -= amount;
+        });
+        return next;
+      });
+      setUpgrades(prev => ({ ...prev, maxCardsLevel: prev.maxCardsLevel + 1 }));
+    }
+  };
+
+  const currentLuckCosts = getLuckUpgradeCost(upgrades.luckLevel);
+  const currentCardsCosts = getCardsUpgradeCost(upgrades.maxCardsLevel);
+  
+  const isMaxLuck = upgrades.luckLevel >= MAX_LUCK_LEVEL;
+  const isMaxCards = upgrades.maxCardsLevel >= MAX_CARDS_LEVEL;
+
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden relative">
+    <div className="min-h-screen flex flex-col relative overflow-y-auto">
       <InventoryDisplay inventory={inventory} />
 
-      <main className="flex-1 flex flex-col items-center justify-center relative px-4 z-10 transition-all duration-500">
-        <div className={`transition-all duration-500 flex flex-col items-center ${isShopOpen ? 'opacity-20 scale-90 blur-sm pointer-events-none' : 'opacity-100 scale-100'}`}>
+      <main className="flex-1 flex flex-col items-center pt-8 pb-16 px-4 ml-24 md:ml-32 z-10">
+        
+        {/* Title and Cards Section */}
+        <div className="w-full flex flex-col items-center mb-8">
           <div className="text-center pointer-events-none mb-4">
-            <h1 className="text-4xl md:text-6xl font-fantasy font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#f5df9f] via-[#c0a060] to-[#8d6e3e] drop-shadow-2xl">
-              TAVERN GAMBIT
+            <h1 className="text-3xl md:text-5xl font-fantasy font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#f5df9f] via-[#c0a060] to-[#8d6e3e] drop-shadow-xl">
+              CARD BONANZA
             </h1>
-            <div className="h-1 w-32 bg-gradient-to-r from-transparent via-[#c0a060] to-transparent mx-auto mt-2 opacity-50"></div>
+            <div className="h-0.5 w-32 bg-gradient-to-r from-transparent via-[#c0a060] to-transparent mx-auto mt-1 opacity-40"></div>
           </div>
 
           <div 
-            className="flex flex-wrap justify-center items-center gap-8 md:gap-12 relative py-12 w-full max-w-5xl"
+            className="flex flex-wrap justify-center items-center gap-4 md:gap-8 relative py-2 w-full max-w-5xl"
           >
             {cards.map((card) => (
               <div 
                 key={card.id} 
-                className="flex items-center justify-center p-2"
+                className="flex items-center justify-center p-1"
               >
                 <Card
                   card={card}
-                  isFlipped={selectedId !== null} // Reveal all when one is picked
+                  isFlipped={selectedId !== null}
                   isHidden={isResetting}
                   isChosen={selectedId === card.id}
                   isDimmed={selectedId !== null && selectedId !== card.id}
                   onFlip={handleCardFlip}
-                  disabled={selectedId !== null || isResetting || isShopOpen}
+                  disabled={selectedId !== null || isResetting}
                 />
               </div>
             ))}
           </div>
         </div>
 
-        <button 
-          onClick={() => setIsShopOpen(!isShopOpen)}
-          className={`
-            fixed bottom-8 right-8 z-50 p-4 rounded-full bg-[#3d2b1f] border-2 border-[#c0a060] text-[#c0a060] shadow-2xl transition-all hover:scale-110 active:scale-95
-            ${isShopOpen ? 'bg-[#c0a060] text-black border-white' : ''}
-          `}
-        >
-          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-             <path d="M20 8H4V6h16v2zm-2-6H6v2h12V2zm4 8v11c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 2H4v7h14v-7z"/>
-          </svg>
-        </button>
-
-        <div className={`
-          fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-500 p-6
-          ${isShopOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-y-10'}
-        `}>
-          <div className="bg-[#2d1e14] border-4 border-[#c0a060] rounded-3xl p-8 max-w-3xl w-full shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
+        {/* Compact Shop Section with two columns */}
+        <div className="w-full max-w-xl px-4">
+          <div className="bg-[#2d1e14]/95 border-2 border-[#c0a060]/40 rounded-2xl p-4 shadow-2xl relative overflow-hidden backdrop-blur-md">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-10"></div>
             
-            <button 
-              onClick={() => setIsShopOpen(false)}
-              className="absolute top-4 right-4 text-[#c0a060] hover:text-white transition-colors p-2"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l18 18" />
-              </svg>
-            </button>
-
-            <h2 className="text-4xl font-fantasy font-black text-[#f5df9f] text-center mb-8 uppercase tracking-widest text-shadow-fantasy">
-              Tavern Upgrades
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-              {[Rarity.UNCOMMON, Rarity.RARE, Rarity.ULTRA_RARE].map(rarity => {
-                const levelKey = rarity === Rarity.UNCOMMON ? 'uncommonLevel' : 
-                                rarity === Rarity.RARE ? 'rareLevel' : 'ultraRareLevel';
-                const level = upgrades[levelKey];
-                const costs = getUpgradeCost(rarity, level);
-                const rConfig = RARITY_CONFIG[rarity];
-                const isMax = level >= MAX_LEVEL;
-
-                return (
-                  <div key={rarity} className="bg-black/40 border border-[#c0a060]/30 rounded-2xl p-6 flex flex-col items-center text-center group hover:border-[#c0a060] transition-colors">
-                    <div className={`w-16 h-16 rounded-full border-2 ${rConfig.border} ${rConfig.gem} mb-4 shadow-lg flex items-center justify-center`}>
-                       <span className="text-white font-fantasy text-xl">{level}</span>
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Luck Upgrade */}
+              <div className="flex flex-col items-center border-b md:border-b-0 md:border-r border-[#c0a060]/20 pb-4 md:pb-0 md:pr-4">
+                <div className="flex items-center justify-between w-full mb-2">
+                  <h2 className="text-[10px] font-fantasy font-black text-[#f5df9f] uppercase tracking-wider">
+                    Luck
+                  </h2>
+                  <span className="text-[#c0a060] font-black text-[9px] uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-[#c0a060]/20">
+                    LVL {upgrades.luckLevel}
+                  </span>
+                </div>
+                <div className="w-full bg-black/30 border border-[#c0a060]/10 rounded-xl p-2.5 flex flex-col items-center">
+                  {!isMaxLuck ? (
+                    <div className="w-full mb-2">
+                      {Object.entries(currentLuckCosts).map(([type, amount]) => {
+                        const res = RESOURCE_CONFIG[type as ResourceType];
+                        const hasEnough = inventory[type as ResourceType] >= (amount || 0);
+                        return (
+                          <div key={type} className="flex items-center justify-between text-[10px]">
+                            <span className={`flex items-center gap-1 ${res.color} font-bold opacity-80 uppercase`}>
+                              {React.cloneElement(res.icon as React.ReactElement<{ className?: string }>, { className: "w-3 h-3" })}
+                              Gold
+                            </span>
+                            <span className={`font-black ${hasEnough ? 'text-white' : 'text-red-500'}`}>
+                              {amount?.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <h3 className={`text-xl font-fantasy font-bold mb-2 ${rConfig.color}`}>{rarity.replace('_', ' ')} LUCK</h3>
-                    <p className="text-[#c0a060]/70 text-xs mb-6 h-12">Increase your chances of finding {rarity.replace('_', ' ')} artifacts.</p>
-                    
-                    {!isMax ? (
-                      <div className="w-full space-y-2 mb-6">
-                        {Object.entries(costs).map(([type, amount]) => {
-                          const res = RESOURCE_CONFIG[type as ResourceType];
-                          const hasEnough = inventory[type as ResourceType] >= (amount || 0);
-                          return (
-                            <div key={type} className="flex items-center justify-between text-sm">
-                              <span className={`flex items-center gap-1 ${res.color}`}>
-                                {React.cloneElement(res.icon as React.ReactElement<{ className?: string }>, { className: "w-4 h-4" })}
-                                {res.label}
-                              </span>
-                              <span className={`font-bold ${hasEnough ? 'text-white' : 'text-red-500'}`}>
-                                {amount}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="mb-6 py-2 px-4 rounded bg-amber-500/10 border border-amber-500/30 text-amber-500 font-bold uppercase tracking-widest text-xs">
-                        MAX LEVEL
-                      </div>
-                    )}
+                  ) : (
+                    <div className="mb-2 text-amber-400 font-black uppercase text-[8px]">MAXED</div>
+                  )}
+                  <button
+                    disabled={isMaxLuck}
+                    onClick={buyLuckUpgrade}
+                    className={`w-full py-1.5 rounded-lg font-black uppercase text-[9px] transition-all
+                      ${isMaxLuck ? 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50' : 'bg-gradient-to-b from-[#f5df9f] to-[#c0a060] text-black hover:scale-[1.02] shadow-sm'}`}
+                  >
+                    Upgrade Luck
+                  </button>
+                </div>
+              </div>
 
-                    <button
-                      disabled={isMax}
-                      onClick={() => buyUpgrade(rarity)}
-                      className={`
-                        w-full py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all
-                        ${isMax ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-[#c0a060] text-black hover:scale-105 active:scale-95 shadow-lg'}
-                      `}
-                    >
-                      {isMax ? 'Mastered' : 'Upgrade'}
-                    </button>
-                  </div>
-                );
-              })}
+              {/* Slots Upgrade */}
+              <div className="flex flex-col items-center pt-0">
+                <div className="flex items-center justify-between w-full mb-2">
+                  <h2 className="text-[10px] font-fantasy font-black text-[#f5df9f] uppercase tracking-wider">
+                    Slots
+                  </h2>
+                  <span className="text-[#c0a060] font-black text-[9px] uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-[#c0a060]/20">
+                    {upgrades.maxCardsLevel + 1}/4
+                  </span>
+                </div>
+                <div className="w-full bg-black/30 border border-[#c0a060]/10 rounded-xl p-2.5 flex flex-col items-center">
+                  {!isMaxCards ? (
+                    <div className="w-full mb-2">
+                      {Object.entries(currentCardsCosts).map(([type, amount]) => {
+                        const res = RESOURCE_CONFIG[type as ResourceType];
+                        const hasEnough = inventory[type as ResourceType] >= (amount || 0);
+                        return (
+                          <div key={type} className="flex items-center justify-between text-[10px]">
+                            <span className={`flex items-center gap-1 ${res.color} font-bold opacity-80 uppercase`}>
+                              {React.cloneElement(res.icon as React.ReactElement<{ className?: string }>, { className: "w-3 h-3" })}
+                              Materials
+                            </span>
+                            <span className={`font-black ${hasEnough ? 'text-white' : 'text-red-500'}`}>
+                              {amount?.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="mb-2 text-amber-400 font-black uppercase text-[8px]">MAXED</div>
+                  )}
+                  <button
+                    disabled={isMaxCards}
+                    onClick={buyCardsUpgrade}
+                    className={`w-full py-1.5 rounded-lg font-black uppercase text-[9px] transition-all
+                      ${isMaxCards ? 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50' : 'bg-gradient-to-b from-[#10b981] to-[#059669] text-white hover:scale-[1.02] shadow-sm'}`}
+                  >
+                    Add Slot
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <div className="mt-8 text-center text-[#c0a060]/40 text-[10px] uppercase tracking-[0.3em]">
-              The tavern keeper favors the wealthy...
-            </div>
+            
+            <p className="text-[#c0a060]/40 text-[7px] mt-2 uppercase font-bold tracking-tighter text-center w-full">
+              Luck improves rarity. Slots increase card quantity.
+            </p>
           </div>
         </div>
-
-        {!isShopOpen && (
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full text-center px-6">
-             <div className="inline-flex flex-col items-center space-y-1">
-               <div className="w-12 h-1 bg-[#c0a060]/30 rounded-full"></div>
-               <p className="text-[#c0a060]/60 text-[11px] font-bold tracking-widest uppercase italic">
-                 Visit the shop to improve your fortunes
-               </p>
-             </div>
-          </div>
-        )}
       </main>
 
+      {/* Decorative Elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -bottom-48 left-1/2 -translate-x-1/2 w-[120vw] h-[120vh] bg-orange-900/10 rounded-full blur-[160px] opacity-40"></div>
+        <div className="absolute -bottom-48 left-1/2 -translate-x-1/2 w-[120vw] h-[120vh] bg-orange-900/10 rounded-full blur-[160px] opacity-20"></div>
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[150px] animate-pulse"></div>
       </div>
     </div>

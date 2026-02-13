@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resource Riches: Hearthstone Edition</title>
+    <title>Card Bonanza</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
     <style>
@@ -12,7 +11,7 @@
         font-family: 'Inter', sans-serif;
         background: #1a0f0a;
         color: #f8fafc;
-        overflow: hidden;
+        overflow-x: hidden;
       }
       .font-fantasy {
         font-family: 'Cinzel', serif;
@@ -44,15 +43,6 @@
       .rarity-glow-rare { filter: drop-shadow(0 0 15px #3b82f6); }
       .rarity-glow-uncommon { filter: drop-shadow(0 0 15px #22c55e); }
       .rarity-glow-common { filter: drop-shadow(0 0 10px #3b82f6); }
-
-      @keyframes card-pop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.15); }
-        100% { transform: scale(1.1); }
-      }
-      .animate-pop {
-        animation: card-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
 
       @keyframes victory-glow {
         0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), 0 0 40px rgba(192, 160, 96, 0.2); }

@@ -1,7 +1,5 @@
-
 export enum ResourceType {
   GOLD = 'GOLD',
-  ENERGY = 'ENERGY',
   MATERIALS = 'MATERIALS'
 }
 
@@ -25,7 +23,6 @@ export interface CardState {
 
 export interface Inventory {
   [ResourceType.GOLD]: number;
-  [ResourceType.ENERGY]: number;
   [ResourceType.MATERIALS]: number;
 }
 
@@ -37,7 +34,6 @@ export interface UpgradeLevel {
 }
 
 export interface UpgradesState {
-  uncommonLevel: number;
-  rareLevel: number;
-  ultraRareLevel: number;
+  luckLevel: number;
+  maxCardsLevel: number;
 }

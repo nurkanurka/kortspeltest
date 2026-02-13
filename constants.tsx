@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ResourceType, Rarity } from './types.ts';
 
@@ -9,15 +8,6 @@ export const RESOURCE_CONFIG = {
     icon: (
       <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/>
-      </svg>
-    )
-  },
-  [ResourceType.ENERGY]: {
-    label: 'Mana',
-    color: 'text-blue-400',
-    icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M13 2L3 14h9v8l10-12h-9l1-8z"/>
       </svg>
     )
   },
