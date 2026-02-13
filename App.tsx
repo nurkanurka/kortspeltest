@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CardState, Inventory, ResourceType, UpgradesState, Rarity } from './types.ts';
 import { generateNewCards, getUpgradeCost, MAX_LEVEL } from './utils/gameLogic.ts';
 import Card from './components/Card.tsx';
@@ -48,10 +48,6 @@ const App: React.FC = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   
-  const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [centerOffsets, setCenterOffsets] = useState<{ [key: string]: { x: number; y: number } }>({});
-
   // Persistence
   useEffect(() => {
     localStorage.setItem('tavern-inventory', JSON.stringify(inventory));
@@ -62,39 +58,6 @@ const App: React.FC = () => {
   useEffect(() => {
     setCards(generateNewCards(upgrades));
   }, [upgrades]);
-
-  const calculateOffsets = useCallback(() => {
-    if (!containerRef.current) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const centerX = containerRect.width / 2;
-    const centerY = containerRect.height / 2;
-
-    const newOffsets: { [key: string]: { x: number; y: number } } = {};
-    
-    cards.forEach((card) => {
-      const el = cardRefs.current[card.id];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const cardCenterX = rect.left - containerRect.left + rect.width / 2;
-        const cardCenterY = rect.top - containerRect.top + rect.height / 2;
-        
-        newOffsets[card.id] = {
-          x: centerX - cardCenterX,
-          y: centerY - cardCenterY
-        };
-      }
-    });
-    setCenterOffsets(newOffsets);
-  }, [cards]);
-
-  useEffect(() => {
-    const timer = setTimeout(calculateOffsets, 100);
-    window.addEventListener('resize', calculateOffsets);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', calculateOffsets);
-    };
-  }, [calculateOffsets]);
 
   const handleCardFlip = useCallback((id: string) => {
     if (selectedId || isResetting || isShopOpen) return;
@@ -116,7 +79,7 @@ const App: React.FC = () => {
         setSelectedId(null);
         setIsResetting(false);
       }, 800);
-    }, 2200);
+    }, 2800); // Slightly longer delay to appreciate the reveal
   }, [cards, selectedId, isResetting, isShopOpen, upgrades]);
 
   const buyUpgrade = (rarity: Rarity) => {
@@ -154,7 +117,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex flex-col items-center justify-center relative px-4 z-10 transition-all duration-500">
         <div className={`transition-all duration-500 flex flex-col items-center ${isShopOpen ? 'opacity-20 scale-90 blur-sm pointer-events-none' : 'opacity-100 scale-100'}`}>
-          <div className="text-center pointer-events-none mb-8">
+          <div className="text-center pointer-events-none mb-4">
             <h1 className="text-4xl md:text-6xl font-fantasy font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#f5df9f] via-[#c0a060] to-[#8d6e3e] drop-shadow-2xl">
               TAVERN GAMBIT
             </h1>
@@ -162,23 +125,21 @@ const App: React.FC = () => {
           </div>
 
           <div 
-            ref={containerRef}
-            className="flex flex-wrap justify-center items-center gap-8 md:gap-16 relative py-12 w-full max-w-5xl"
+            className="flex flex-wrap justify-center items-center gap-8 md:gap-12 relative py-12 w-full max-w-5xl"
           >
             {cards.map((card) => (
               <div 
                 key={card.id} 
-                ref={el => { cardRefs.current[card.id] = el; }}
-                className="flex items-center justify-center"
+                className="flex items-center justify-center p-2"
               >
                 <Card
                   card={card}
-                  isFlipped={selectedId === card.id}
-                  isHidden={(selectedId !== null && selectedId !== card.id) || isResetting}
+                  isFlipped={selectedId !== null} // Reveal all when one is picked
+                  isHidden={isResetting}
                   isChosen={selectedId === card.id}
+                  isDimmed={selectedId !== null && selectedId !== card.id}
                   onFlip={handleCardFlip}
                   disabled={selectedId !== null || isResetting || isShopOpen}
-                  offsetToCenter={centerOffsets[card.id]}
                 />
               </div>
             ))}

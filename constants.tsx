@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ResourceType, Rarity } from './types';
+import { ResourceType, Rarity } from './types.ts';
 
 export const RESOURCE_CONFIG = {
   [ResourceType.GOLD]: {
@@ -40,7 +40,8 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-common',
     backGradient: 'from-blue-700 via-blue-900 to-blue-950',
     backBorder: 'border-blue-400',
-    accentColor: 'text-blue-300'
+    accentColor: 'text-blue-300',
+    backImage: 'https://image2url.com/r2/default/images/1770970760490-400676c7-a897-453e-88d6-12c5ae7dc813.png'
   },
   [Rarity.UNCOMMON]: { 
     color: 'text-green-400', 
@@ -49,7 +50,8 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-uncommon',
     backGradient: 'from-emerald-600 via-emerald-800 to-emerald-950',
     backBorder: 'border-emerald-400',
-    accentColor: 'text-emerald-300'
+    accentColor: 'text-emerald-300',
+    backImage: 'https://image2url.com/r2/default/images/1770970838038-0614dfe5-048b-4e18-a3b1-a99851d5b2f8.png'
   },
   [Rarity.RARE]: { 
     color: 'text-slate-100', 
@@ -58,7 +60,8 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-rare',
     backGradient: 'from-slate-400 via-slate-600 to-slate-800',
     backBorder: 'border-slate-100',
-    accentColor: 'text-white'
+    accentColor: 'text-white',
+    backImage: 'https://image2url.com/r2/default/images/1770970856338-2249b4a2-f6e3-4cf8-b4da-482cadb8a71e.png'
   },
   [Rarity.ULTRA_RARE]: { 
     color: 'text-yellow-400', 
@@ -67,6 +70,7 @@ export const RARITY_CONFIG = {
     glow: 'rarity-glow-legendary',
     backGradient: 'from-amber-400 via-amber-600 to-amber-900',
     backBorder: 'border-yellow-200',
-    accentColor: 'text-yellow-200'
+    accentColor: 'text-yellow-200',
+    backImage: 'https://image2url.com/r2/default/images/1770970873957-fa88d4e9-bcba-4223-8f12-ea2894165862.png'
   },
 };

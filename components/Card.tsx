@@ -8,27 +8,27 @@ interface CardProps {
   isFlipped: boolean;
   isHidden: boolean;
   isChosen: boolean;
+  isDimmed: boolean;
   onFlip: (id: string) => void;
   disabled: boolean;
-  offsetToCenter?: { x: number; y: number };
 }
 
-const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip, disabled, offsetToCenter }) => {
+const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, isDimmed, onFlip, disabled }) => {
   const resConfig = RESOURCE_CONFIG[card.resource.type];
-  const rarityConfig = RARITY_CONFIG[card.resource.rarity];
+  const rarityConfig = (RARITY_CONFIG as any)[card.resource.rarity];
 
-  const centerTransform = isChosen && offsetToCenter 
-    ? `translate(${offsetToCenter.x}px, ${offsetToCenter.y - 40}px) scale(1.1)` 
-    : isChosen ? 'translateY(-40px) scale(1.1)' : '';
+  // The card stays in place but floats upward and scales slightly when chosen
+  const floatTransform = isChosen ? 'translateY(-60px) scale(1.1)' : '';
 
   return (
     <div 
       className={`
-        relative w-56 h-80 perspective-1000 transition-all duration-700 ease-in-out cursor-pointer
+        relative w-48 h-[16.5rem] perspective-1000 transition-all duration-700 ease-in-out cursor-pointer
         ${isHidden ? 'opacity-0 scale-50 rotate-x-12 pointer-events-none' : 'opacity-100'}
         ${isChosen ? 'z-50' : 'z-10'}
+        ${isDimmed ? 'scale-95' : ''}
       `}
-      style={{ transform: centerTransform }}
+      style={{ transform: floatTransform }}
       onClick={() => !disabled && onFlip(card.id)}
     >
       <div 
@@ -36,48 +36,52 @@ const Card: React.FC<CardProps> = ({ card, isFlipped, isHidden, isChosen, onFlip
           relative w-full h-full transform-style-3d transition-transform
           ${isChosen ? 'duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : 'duration-600'}
           ${isFlipped ? 'rotate-y-180' : ''}
-          ${isChosen ? 'victory-glow-active rounded-2xl' : ''}
+          ${isChosen ? 'victory-glow-active rounded-[1.5rem]' : ''}
         `}
       >
         {/* Card Back */}
-        <div className={`absolute inset-0 backface-hidden flex items-center justify-center rounded-2xl border-[10px] ${rarityConfig.backBorder} shadow-2xl overflow-hidden group`}>
-          <div className={`absolute inset-0 bg-gradient-to-br ${rarityConfig.backGradient}`}></div>
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at center, white 1px, transparent 1px)`, backgroundSize: '16px 16px' }}></div>
-          <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
-            <div className={`w-full h-full border-[2px] ${rarityConfig.backBorder} rounded-xl p-2 flex items-center justify-center relative bg-black/10`}>
-              <div className={`w-36 h-36 rounded-full border-[6px] ${rarityConfig.backBorder} flex items-center justify-center bg-black/40 shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden`}>
-                <div className={`w-full h-full flex items-center justify-center relative ${!disabled ? 'animate-spin-slow' : ''}`}>
-                  <svg className={`w-24 h-24 ${rarityConfig.accentColor} opacity-80`} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="50" cy="50" r="40" strokeDasharray="10 5" />
-                    <path d="M50 10 L50 90 M10 50 L90 50 M25 25 L75 75 M25 75 L75 25" strokeDasharray="2 2" />
-                    <circle cx="50" cy="50" r="10" fill="currentColor" className="animate-pulse" />
-                  </svg>
+        <div className={`absolute inset-0 backface-hidden flex items-center justify-center rounded-[1.5rem] shadow-2xl group overflow-visible`}>
+          {rarityConfig.backImage ? (
+            <div 
+              className="absolute inset-[-10%] bg-[length:100%_100%] bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105"
+              style={{ backgroundImage: `url(${rarityConfig.backImage})` }}
+            />
+          ) : (
+            <div className="absolute inset-0 rounded-[1.5rem] border-4 border-black/30 overflow-hidden">
+              <div className={`absolute inset-0 bg-gradient-to-br ${rarityConfig.backGradient}`}></div>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at center, white 1px, transparent 1px)`, backgroundSize: '16px 16px' }}></div>
+              <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+                <div className={`w-full h-full border-[2px] ${rarityConfig.backBorder} rounded-xl p-2 flex items-center justify-center relative bg-black/10`}>
+                  <div className={`w-32 h-32 rounded-full border-[4px] ${rarityConfig.backBorder} flex items-center justify-center bg-black/40 shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden`}>
+                    <div className={`w-full h-full flex items-center justify-center relative ${!disabled ? 'animate-spin-slow' : ''}`}>
+                      <svg className={`w-20 h-20 ${rarityConfig.accentColor} opacity-80`} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="50" cy="50" r="40" strokeDasharray="10 5" />
+                        <path d="M50 10 L50 90 M10 50 L90 50 M25 25 L75 75 M25 75 L75 25" strokeDasharray="2 2" />
+                        <circle cx="50" cy="50" r="10" fill="currentColor" className="animate-pulse" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className={`absolute -top-1 -left-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-tl-lg rotate-45 transform -translate-x-1/2 -translate-y-1/2 shadow-md`}></div>
-              <div className={`absolute -top-1 -right-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-tr-lg -rotate-45 transform translate-x-1/2 -translate-y-1/2 shadow-md`}></div>
-              <div className={`absolute -bottom-1 -left-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-bl-lg -rotate-45 transform -translate-x-1/2 translate-y-1/2 shadow-md`}></div>
-              <div className={`absolute -bottom-1 -right-1 w-12 h-12 bg-inherit border-[4px] ${rarityConfig.backBorder} rounded-br-lg rotate-45 transform translate-x-1/2 translate-y-1/2 shadow-md`}></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <span className={`font-fantasy text-5xl ${rarityConfig.accentColor} font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]`}>?</span>
-              </div>
             </div>
-          </div>
+          )}
           {!disabled && (
-            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 rounded-[1.5rem]"></div>
           )}
         </div>
 
         {/* Card Front */}
         <div 
           className={`
-            absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center bg-[#2d241d] rounded-2xl border-[8px] ${rarityConfig.border} overflow-hidden
+            absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center bg-[#2d241d] rounded-[1.5rem] border-[8px] ${rarityConfig.border} overflow-hidden
             ${rarityConfig.glow}
+            transition-all duration-700
+            ${isDimmed ? 'brightness-[0.25] grayscale-[0.6] opacity-70' : ''}
           `}
         >
           <div className="w-full h-1/2 bg-[#1a1410] flex items-center justify-center relative overflow-hidden card-inner-shadow">
              <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
-             <div className={`${resConfig.color} transform scale-150 drop-shadow-[0_0_15px_currentColor]`}>
+             <div className={`${resConfig.color} transform scale-[1.3] drop-shadow-[0_0_15px_currentColor]`}>
                 {resConfig.icon}
              </div>
              {card.resource.rarity === Rarity.ULTRA_RARE && (
